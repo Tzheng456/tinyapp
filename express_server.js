@@ -52,12 +52,18 @@ app.get("/urls/new", (req, res) => {
 app.get("/login", (req, res) => {
   const userID = req.cookies.user_id;
   const templateVars = { user: users[userID] };
+  if (users[userID]) {
+    res.redirect("/urls");
+  }
   res.render("urls_login", templateVars);
 });
 
 app.get("/register", (req, res) => {
   const userID = req.cookies.user_id;
   const templateVars = { user: users[userID] };
+  if (users[userID]) {
+    res.redirect("/urls");
+  }
   res.render("urls_register", templateVars);
 });
 
