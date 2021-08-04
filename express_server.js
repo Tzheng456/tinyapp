@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const e = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -46,25 +47,31 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = req.cookies.user_id;
   const templateVars = { user: users[userID] };
-  res.render("urls_new", templateVars);
+  if (!userID) {
+    res.redirect("/login");
+  } else {
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/login", (req, res) => {
   const userID = req.cookies.user_id;
   const templateVars = { user: users[userID] };
-  if (users[userID]) {
+  if (userID) {
     res.redirect("/urls");
+  } else {
+    res.render("urls_login", templateVars);
   }
-  res.render("urls_login", templateVars);
 });
 
 app.get("/register", (req, res) => {
   const userID = req.cookies.user_id;
   const templateVars = { user: users[userID] };
-  if (users[userID]) {
+  if (userID) {
     res.redirect("/urls");
+  } else {
+    res.render("urls_register", templateVars);
   }
-  res.render("urls_register", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -94,9 +101,14 @@ app.get("/hello", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  const userID = req.cookies.user_id;
+  if (!userID) {
+    res.send("You need to be logged in to do that!\n");
+  } else {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = req.body.longURL;
+    res.redirect(`/urls/${shortURL}`);
+  }
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
