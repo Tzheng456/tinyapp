@@ -38,7 +38,7 @@ app.listen(PORT, () => {
 
 app.get("/urls", (req, res) => {
   const userID = req.cookies.user_id;
-  console.log(req.cookies);
+  console.log(userID);
   const templateVars = { urls: urlDatabase, user: users[userID] };
   res.render("urls_index", templateVars);
 });
@@ -47,6 +47,12 @@ app.get("/urls/new", (req, res) => {
   const userID = req.cookies.user_id;
   const templateVars = { user: users[userID] };
   res.render("urls_new", templateVars);
+});
+
+app.get("/login", (req, res) => {
+  const userID = req.cookies.user_id;
+  const templateVars = { user: users[userID] };
+  res.render("urls_login", templateVars);
 });
 
 app.get("/register", (req, res) => {
@@ -80,27 +86,6 @@ app.get("/hello", (req, res) => {
 
 //POSTS
 
-app.post("/register", (req, res) => {
-  const userID = generateRandomString();
-  const userEmail = req.body.email;
-  const userPass = req.body.password;
-  if (!userEmail || !userPass) {
-    res.sendStatus(400);
-  }
-  if (!userLookup(userEmail)) {
-    users[userID] = {
-      id: userID,
-      email: userEmail,
-      password: userPass,
-    };
-    res.cookie("user_id", userID);
-    console.log("users:", users);
-    res.redirect("/urls");
-  } else {
-    res.sendStatus(400);
-  }
-});
-
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   const shortURL = generateRandomString();
@@ -120,16 +105,45 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
+  const userEmail = req.body.email;
+  const userPass = req.body.password;
+  const userID = userLookup(userEmail);
+
+  if (!userID) {
+    res.redirect(403, "/urls");
+  }
+  if (users[userID].password !== userPass) {
+    res.redirect(403, "/urls");
+  }
+  res.cookie("user_id", userLookup(userEmail));
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
+app.post("/register", (req, res) => {
+  const userID = generateRandomString();
+  const userEmail = req.body.email;
+  const userPass = req.body.password;
+  if (!userEmail || !userPass) {
+    res.redirect(400, "/urls");
+  }
+  if (!userLookup(userEmail)) {
+    users[userID] = {
+      id: userID,
+      email: userEmail,
+      password: userPass,
+    };
+    res.cookie("user_id", userID);
+    console.log("users:", users);
+    res.redirect("/urls");
+  } else {
+    res.redirect(400, "/urls");
+  }
+});
 // eslint-disable-next-line func-style
 function generateRandomString() {
   let result = "";
@@ -141,12 +155,13 @@ function generateRandomString() {
   return result;
 }
 
+//returns the userID of user with userEmail
 // eslint-disable-next-line func-style
 function userLookup(userEmail) {
   for (let user in users) {
     if (users[user].email === userEmail) {
-      return true;
+      return user;
     }
   }
-  return false;
+  return undefined;
 }
