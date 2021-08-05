@@ -1,5 +1,7 @@
 const express = require("express");
-const getUserByEmail = require("./helpers");
+const helpers = require("./helpers");
+const getUserByEmail = helpers.getUserByEmail;
+const generateRandomString = helpers.generateRandomString;
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 const app = express();
@@ -233,13 +235,3 @@ app.post("/register", (req, res) => {
     res.redirect(400, "/urls");
   }
 });
-// eslint-disable-next-line func-style
-function generateRandomString() {
-  let result = "";
-  let characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
