@@ -16,33 +16,9 @@ app.use(
 );
 app.set("view engine", "ejs");
 
-const urlDatabase = {
-  // b6UTxQ: {
-  //   longURL: "https://www.tsn.ca",
-  //   userID: "aJ48lW",
-  // },
-  // i3BoGr: {
-  //   longURL: "https://www.google.ca",
-  //   userID: "aJ48lW",
-  // },
-  // lQZQHa: {
-  //   longURL: "google.com",
-  //   userID: "aJ48lW",
-  // },
-};
+const urlDatabase = {};
 
-const users = {
-  // aJ48lW: {
-  //   id: "aJ48lW",
-  //   email: "1@gmail.com",
-  //   password: "123",
-  // },
-  // user2RandomID: {
-  //   id: "user2RandomID",
-  //   email: "user2@example.com",
-  //   password: "dishwasher-funk",
-  // },
-};
+const users = {};
 
 //GETS
 
