@@ -179,7 +179,7 @@ app.post("/login", (req, res) => {
     res.redirect(403, "/urls");
   }
   // eslint-disable-next-line camelcase
-  req.session.user_id = getUserByEmail(userEmail, users);
+  req.session.user_id = userID;
   res.redirect("/urls");
 });
 
