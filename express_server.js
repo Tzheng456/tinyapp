@@ -1,40 +1,46 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
-const { response } = require("express");
 const app = express();
-const PORT = 3001; // default port 8080
+const PORT = 8080; // default port 8080
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1"],
+  })
+);
 app.set("view engine", "ejs");
 
 const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-  lQZQHa: {
-    longURL: "google.com",
-    userID: "aJ48lW",
-  },
+  // b6UTxQ: {
+  //   longURL: "https://www.tsn.ca",
+  //   userID: "aJ48lW",
+  // },
+  // i3BoGr: {
+  //   longURL: "https://www.google.ca",
+  //   userID: "aJ48lW",
+  // },
+  // lQZQHa: {
+  //   longURL: "google.com",
+  //   userID: "aJ48lW",
+  // },
 };
 
 const users = {
-  aJ48lW: {
-    id: "aJ48lW",
-    email: "1@gmail.com",
-    password: "123",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
+  // aJ48lW: {
+  //   id: "aJ48lW",
+  //   email: "1@gmail.com",
+  //   password: "123",
+  // },
+  // user2RandomID: {
+  //   id: "user2RandomID",
+  //   email: "user2@example.com",
+  //   password: "dishwasher-funk",
+  // },
 };
 
 //GETS
@@ -48,7 +54,7 @@ app.listen(PORT, () => {
 });
 
 app.get("/urls", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   // console.log(users[userID]);
   let templateVars = {
     urls: urlDatabase,
@@ -71,7 +77,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const templateVars = { user: users[userID] };
   if (!(userID in users)) {
     res.redirect("/login");
@@ -81,7 +87,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const templateVars = { user: users[userID] };
   if (userID in users) {
     res.redirect("/urls");
@@ -91,7 +97,7 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const templateVars = { user: users[userID] };
   if (userID in users) {
     res.redirect("/urls");
@@ -114,7 +120,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
   const templateVars = {
     longURL: urlDatabase[shortURL].longURL,
@@ -140,7 +146,7 @@ app.get("/hello", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   if (!(userID in users)) {
     res.send("You need to be logged in to do that!\n");
   } else {
@@ -162,7 +168,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
   if (userID === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
@@ -192,17 +198,22 @@ app.post("/login", (req, res) => {
   const userID = userLookup(userEmail);
 
   if (!(userID in users)) {
+    console.log("user not found");
     res.redirect(403, "/urls");
   }
+  console.log("entered:", userPass, "hashed:", users[userID].password);
   if (!bcrypt.compareSync(userPass, users[userID].password)) {
+    console.log("wrong password");
     res.redirect(403, "/urls");
   }
-  res.cookie("user_id", userLookup(userEmail));
+  // eslint-disable-next-line camelcase
+  req.session.user_id = userLookup(userEmail);
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  // res.clearCookie("user_id");
+  req.session.user_id = null;
   res.redirect("/urls");
 });
 
@@ -221,7 +232,9 @@ app.post("/register", (req, res) => {
       email: userEmail,
       password: hashedPassword,
     };
-    res.cookie("user_id", userID);
+    // res.cookie("user_id", userID);
+    // eslint-disable-next-line camelcase
+    req.session.user_id = userID;
     console.log("users:", users);
     res.redirect("/urls");
   } else {
