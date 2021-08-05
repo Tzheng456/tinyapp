@@ -1,12 +1,11 @@
 const express = require("express");
-// const cookieParser = require("cookie-parser");
+const getUserByEmail = require("./helpers");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.use(express.urlencoded({ extended: true }));
-// app.use(cookieParser());
 app.use(
   cookieSession({
     name: "session",
@@ -55,7 +54,6 @@ app.listen(PORT, () => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
-  // console.log(users[userID]);
   let templateVars = {
     urls: urlDatabase,
     user: users[userID],
@@ -63,7 +61,6 @@ app.get("/urls", (req, res) => {
     loggedIn: true,
   };
   if (!(userID in users)) {
-    console.log("NOTLOGGEDIN");
     templateVars = {
       urls: urlDatabase,
       user: users[userID],
@@ -108,12 +105,9 @@ app.get("/register", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  // const longURLFromForm = req.params.longURL;
-  console.log(req.params);
   if (!urlDatabase[shortURL]) {
     res.send(`No such id: ${shortURL}`);
   } else {
-    // urlDatabase[shortURL].longURL = longURLFromForm;
     const longURL = urlDatabase[shortURL].longURL;
     res.redirect(longURL);
   }
@@ -145,14 +139,11 @@ app.get("/hello", (req, res) => {
 //POSTS
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
   const userID = req.session.user_id;
   if (!(userID in users)) {
     res.send("You need to be logged in to do that!\n");
   } else {
-    // console.log("userID in /urls post:", userID);
     const shortURL = generateRandomString();
-    // console.log("shortURL in /urls POST:", shortURL);
     const longURL = req.body.longURL;
     if (longURL.match(/https{0,1}:\/\/.*/g)) {
       urlDatabase[shortURL] = { longURL: longURL, userID: userID };
@@ -180,7 +171,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  // console.log("/urls/:shortURL POST:", shortURL);
   const longURL = req.body.longURL;
 
   if (longURL.match(/https{0,1}:\/\//g)) {
@@ -195,24 +185,23 @@ app.post("/urls/:shortURL", (req, res) => {
 app.post("/login", (req, res) => {
   const userEmail = req.body.email;
   const userPass = req.body.password;
-  const userID = userLookup(userEmail);
+  const userID = getUserByEmail(userEmail, users);
 
   if (!(userID in users)) {
     console.log("user not found");
     res.redirect(403, "/urls");
   }
-  console.log("entered:", userPass, "hashed:", users[userID].password);
   if (!bcrypt.compareSync(userPass, users[userID].password)) {
     console.log("wrong password");
     res.redirect(403, "/urls");
   }
   // eslint-disable-next-line camelcase
-  req.session.user_id = userLookup(userEmail);
+  req.session.user_id = getUserByEmail(userEmail, users);
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  // res.clearCookie("user_id");
+  // eslint-disable-next-line camelcase
   req.session.user_id = null;
   res.redirect("/urls");
 });
@@ -226,16 +215,14 @@ app.post("/register", (req, res) => {
     res.redirect(400, "/urls");
   }
 
-  if (!userLookup(userEmail)) {
+  if (!getUserByEmail(userEmail, users)) {
     users[userID] = {
       id: userID,
       email: userEmail,
       password: hashedPassword,
     };
-    // res.cookie("user_id", userID);
     // eslint-disable-next-line camelcase
     req.session.user_id = userID;
-    console.log("users:", users);
     res.redirect("/urls");
   } else {
     res.redirect(400, "/urls");
@@ -250,15 +237,4 @@ function generateRandomString() {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
-}
-
-//returns the userID of user with userEmail
-// eslint-disable-next-line func-style
-function userLookup(userEmail) {
-  for (let user in users) {
-    if (users[user].email === userEmail) {
-      return user;
-    }
-  }
-  return undefined;
 }
