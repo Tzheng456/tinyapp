@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cookieSession({
     name: "session",
-    keys: ["key1"],
+    keys: ["cool-side-of-the-pillow"],
   })
 );
 app.set("view engine", "ejs");
