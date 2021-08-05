@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const { response } = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -48,8 +49,24 @@ app.listen(PORT, () => {
 app.get("/urls", (req, res) => {
   const userID = req.cookies.user_id;
   // console.log(users[userID]);
-  const templateVars = { urls: urlDatabase, user: users[userID], userID };
-  res.render("urls_index", templateVars);
+  let templateVars = {
+    urls: urlDatabase,
+    user: users[userID],
+    userID,
+    loggedIn: true,
+  };
+  if (!(userID in users)) {
+    console.log("NOTLOGGEDIN");
+    templateVars = {
+      urls: urlDatabase,
+      user: users[userID],
+      userID,
+      loggedIn: false,
+    };
+    res.render("urls_index", templateVars);
+  } else {
+    res.render("urls_index", templateVars);
+  }
 });
 
 app.get("/urls/new", (req, res) => {
@@ -104,7 +121,11 @@ app.get("/urls/:shortURL", (req, res) => {
     shortURL: shortURL,
     user: users[userID],
   };
-  res.render("urls_show", templateVars);
+  if (userID === urlDatabase[shortURL].userID) {
+    res.render("urls_show", templateVars);
+  } else {
+    res.send("Permission denied!");
+  }
 });
 
 app.get("/urls.json", (req, res) => {
@@ -141,9 +162,14 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const userID = req.cookies.user_id;
   const shortURL = req.params.shortURL;
-  delete urlDatabase[shortURL];
-  res.redirect("/urls");
+  if (userID === urlDatabase[shortURL].userID) {
+    delete urlDatabase[shortURL];
+    res.redirect("/urls");
+  } else {
+    res.send("Permission denied!");
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
