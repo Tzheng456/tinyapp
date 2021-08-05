@@ -45,7 +45,12 @@ const users = {
 //GETS
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userID = req.session.user_id;
+  if (!(userID in users)) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
 });
 
 app.listen(PORT, () => {
