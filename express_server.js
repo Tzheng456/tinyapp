@@ -229,9 +229,8 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
-//log-out
+//delete all session cookies and redirect to /urls
 app.post("/logout", (req, res) => {
-  //delete all session cookies and redirect to /urls
   req.session = null;
   res.redirect("/urls");
 });
