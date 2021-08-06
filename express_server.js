@@ -123,6 +123,7 @@ app.get("/hello", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
+  console.log("userid:", userID);
   if (!(userID in users)) {
     res.send("You need to be logged in to do that!\n");
   } else {
@@ -153,15 +154,20 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
+  const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
 
-  if (longURL.match(/https{0,1}:\/\//g)) {
-    urlDatabase[shortURL].longURL = longURL;
-    res.redirect(`/urls/${shortURL}`);
+  if (userID === urlDatabase[shortURL].userID) {
+    if (longURL.match(/https{0,1}:\/\//g)) {
+      urlDatabase[shortURL].longURL = longURL;
+      res.redirect(`/urls/${shortURL}`);
+    } else {
+      urlDatabase[shortURL].longURL = "https://" + longURL;
+      res.redirect(`/urls/${shortURL}`);
+    }
   } else {
-    urlDatabase[shortURL].longURL = "https://" + longURL;
-    res.redirect(`/urls/${shortURL}`);
+    res.send("Permission denied!");
   }
 });
 
