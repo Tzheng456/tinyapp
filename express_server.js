@@ -37,6 +37,8 @@ app.listen(PORT, () => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
+
+  //templateVars.loggedIn is modified to change what is rendered on urls_index
   let templateVars = {
     urls: urlDatabase,
     user: users[userID],
@@ -44,12 +46,7 @@ app.get("/urls", (req, res) => {
     loggedIn: true,
   };
   if (!(userID in users)) {
-    templateVars = {
-      urls: urlDatabase,
-      user: users[userID],
-      userID,
-      loggedIn: false,
-    };
+    templateVars.loggedIn = false;
     res.render("urls_index", templateVars);
   } else {
     res.render("urls_index", templateVars);
@@ -123,23 +120,24 @@ app.get("/hello", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
-  console.log("userid:", userID);
+
   if (!(userID in users)) {
-    res.send("You need to be logged in to do that!\n");
-  } else {
-    const shortURL = generateRandomString();
-    const longURL = req.body.longURL;
-    if (longURL.match(/https{0,1}:\/\/.*/g)) {
-      urlDatabase[shortURL] = { longURL: longURL, userID: userID };
-      res.redirect(`/urls/${shortURL}`);
-    } else {
-      urlDatabase[shortURL] = {
-        longURL: "https://" + longURL,
-        userID: userID,
-      };
-      res.redirect(`/urls/${shortURL}`);
-    }
+    return res.send("You need to be logged in to do that!\n");
   }
+
+  const shortURL = generateRandomString();
+  const longURL = req.body.longURL;
+
+  if (!longURL.match(/https{0,1}:\/\/.*/g)) {
+    urlDatabase[shortURL] = {
+      longURL: "https://" + longURL,
+      userID: userID,
+    };
+    return res.redirect(`/urls/${shortURL}`);
+  }
+
+  urlDatabase[shortURL] = { longURL: longURL, userID: userID };
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -172,17 +170,16 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const userEmail = req.body.email;
-  const userPass = req.body.password;
+  const { userEmail, userPass } = req.body;
   const userID = getUserByEmail(userEmail, users);
 
   if (!(userID in users)) {
     console.log("user not found");
-    res.redirect(403, "/urls");
+    return res.redirect(403, "/urls");
   }
   if (!bcrypt.compareSync(userPass, users[userID].password)) {
     console.log("wrong password");
-    res.redirect(403, "/urls");
+    return res.redirect(403, "/urls");
   }
   // eslint-disable-next-line camelcase
   req.session.user_id = userID;
@@ -197,8 +194,7 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
-  const userEmail = req.body.email;
-  const userPass = req.body.password;
+  const { userEmail, userPass } = req.body;
   const hashedPassword = bcrypt.hashSync(userPass, 10);
   if (!userEmail || !userPass) {
     res.redirect(400, "/urls");
